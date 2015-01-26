@@ -84,4 +84,4 @@ gulp.task('test', function () {
     return gulp.src('test/*.coffee', { read: false }).pipe(mocha());
 });
 
-gulp.task('default', ['lint', 'test']);
+gulp.task('default', ['lint', 'test', 'standalone']);
