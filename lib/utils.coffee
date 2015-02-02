@@ -40,5 +40,5 @@ module.exports =
       value
     else
       join = value.match(/,\s*/)
-      join = if join then join[0] else ', '
+      join = if join then join[0] else '\n'
       changed.join(join)

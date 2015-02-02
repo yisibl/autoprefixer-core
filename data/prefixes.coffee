@@ -1,5 +1,17 @@
 browsers = require('./browsers')
 
+# Sort browsers
+sort = (array) ->
+  array.sort (a, b) ->
+    a = a.split(' ')
+    b = b.split(' ')
+    if a[0] > b[0]
+      1
+    else if a[0] < b[0]
+      -1
+    else
+      parseFloat(a[1]) - parseFloat(b[1])
+
 # Convert Can I Use data
 feature = (data, opts, callback) ->
   [callback, opts] = [opts, { }] unless callback
@@ -14,17 +26,7 @@ feature = (data, opts, callback) ->
           version = version.replace(/\.0$/, '')
           need.push(browser + ' ' + version)
 
-  sorted = need.sort (a, b) ->
-    a = a.split(' ')
-    b = b.split(' ')
-    if a[0] > b[0]
-      1
-    else if a[0] < b[0]
-      -1
-    else
-      parseFloat(a[1]) - parseFloat(b[1])
-
-  callback(sorted)
+  callback(sort(need))
 
 # Select only special browsers
 map = (browsers, callback) ->
@@ -41,11 +43,17 @@ filter = (browsers, callback) ->
     callback(name, version)
 
 # Add data for all properties
+result = { }
 prefix = (names..., data) ->
   for name in names
-    module.exports[name] = data
+    if result[name]
+      result[name].browsers = sort(result[name].browsers.concat(data.browsers))
+    else
+      result[name] = { }
+      for i of data
+        result[name][i] = data[i]
 
-module.exports = { }
+module.exports = result
 
 # Border Radius
 feature require('caniuse-db/features-json/border-radius'), (browsers) ->
@@ -136,27 +144,29 @@ feature require('caniuse-db/features-json/user-select-none'), (browsers) ->
           browsers: browsers
 
 # Flexible Box Layout
-feature require('caniuse-db/features-json/flexbox'), (browsers) ->
-  browsers = map browsers, (browser, name, version) ->
-    if name == 'safari' and version < 6.1
-      browser + ' 2009'
-    else if name == 'ios_saf' and version < 7
-      browser + ' 2009'
-    else if name == 'chrome' and version < 21
-      browser + ' 2009'
-    else if name == 'android' and version < 4.4
-      browser + ' 2009'
-    else
-      browser
+flexbox = require('caniuse-db/features-json/flexbox')
+
+feature flexbox, match: /y\sx|a\sx\s#2/, (browsers) ->
+  prefix 'display-flex', 'inline-flex',
+          props:  ['display']
+          browsers: browsers
+  prefix 'flex', 'flex-grow', 'flex-shrink', 'flex-basis',
+          transition: true
+          browsers:   browsers
+  prefix 'flex-direction', 'flex-wrap', 'flex-flow', 'justify-content',
+         'order', 'align-items', 'align-self', 'align-content',
+          browsers: browsers
+
+feature flexbox, match: /a\sx\s#1/, (browsers) ->
+  browsers = map browsers, (i, name) ->
+    if name == 'firefox' or name == 'and_ff' then i else i + ' 2009'
 
   prefix 'display-flex', 'inline-flex',
           props:  ['display']
           browsers: browsers
-
   prefix 'flex', 'flex-grow', 'flex-shrink', 'flex-basis',
           transition: true
           browsers:   browsers
-
   prefix 'flex-direction', 'flex-wrap', 'flex-flow', 'justify-content',
          'order', 'align-items', 'align-self', 'align-content',
           browsers: browsers
